@@ -6,10 +6,22 @@ import (
 	"github.com/sum-project/bookstore/cmd/users-api/app/services"
 	"github.com/sum-project/bookstore/pkg/errors"
 	"net/http"
+	"strconv"
 )
 
 func GetUser(c *gin.Context) {
-	c.String(http.StatusNotImplemented, "implement me!")
+	userId, err := strconv.ParseInt(c.Param("user_id"), 10, 64)
+	if err != nil {
+		restErr := errors.NewBadRequestErr("user id should be a number")
+		c.JSON(restErr.Status, restErr)
+		return
+	}
+	user, getErr := services.GetUser(userId)
+	if err != nil {
+		c.JSON(getErr.Status, getErr)
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }
 
 func CreateUser(c *gin.Context) {
