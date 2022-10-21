@@ -9,6 +9,10 @@ import (
 )
 
 func GetUser(c *gin.Context) {
+	c.String(http.StatusNotImplemented, "implement me!")
+}
+
+func CreateUser(c *gin.Context) {
 	var user users.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		restErr := errors.NewBadRequestErr("invalid json body")
@@ -22,9 +26,4 @@ func GetUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, result)
-}
-
-func CreateUser(c *gin.Context) {
-	c.String(http.StatusNotImplemented, "implement me!")
-
 }

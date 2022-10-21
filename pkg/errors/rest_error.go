@@ -8,10 +8,18 @@ type RestErr struct {
 	Error   string `json:"error"`
 }
 
-func NewBadRequestErr(message string) *RestErr {
+func NewBadRequestErr(msg string) *RestErr {
 	return &RestErr{
-		Message: message,
+		Message: msg,
 		Status:  http.StatusBadRequest,
 		Error:   "bad_request",
+	}
+}
+
+func NewNotFoundErr(msg string) *RestErr {
+	return &RestErr{
+		Message: msg,
+		Status:  http.StatusNotFound,
+		Error:   "not_found",
 	}
 }
