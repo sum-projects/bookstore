@@ -1,26 +1,27 @@
 package users
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/sum-project/bookstore/cmd/users-api/app/domain/users"
-	"io/ioutil"
+	"github.com/sum-project/bookstore/cmd/users-api/app/services"
+	"github.com/sum-project/bookstore/pkg/errors"
 	"net/http"
 )
 
 func GetUser(c *gin.Context) {
 	var user users.User
-	bytes, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		//TODO: Handle error
-		return
+	if err := c.ShouldBindJSON(&user); err != nil {
+		restErr := errors.NewBadRequestErr("invalid json body")
+		c.JSON(restErr.Status, restErr)
 	}
-	if err = json.Unmarshal(bytes, &user); err != nil {
-		//TODO: Handle error
+
+	result, err := services.CreateUser(user)
+	if err != nil {
+		c.JSON(err.Status, err)
 		return
 	}
 
-	c.String(http.StatusNotImplemented, "implement me!")
+	c.JSON(http.StatusCreated, result)
 }
 
 func CreateUser(c *gin.Context) {
