@@ -10,7 +10,7 @@ const (
 	errorNoRows = "no rows in result set"
 )
 
-func ParseError(err error) *errors.RestErr {
+func ParseErr(err error) *errors.RestErr {
 	sqlErr, ok := err.(*mysql.MySQLError)
 	if !ok {
 		if strings.Contains(err.Error(), errorNoRows) {

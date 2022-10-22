@@ -9,7 +9,8 @@ import (
 
 const (
 	queryInsertUser = "INSERT INTO users(first_name, last_name, email, status, password) VALUES (?, ?, ?, ?, ?);"
-	queryGetUser    = "SELECT id, first_name, last_name, email, date_created, date_updated FROM users WHERE id=?;"
+	queryGetUser    = "SELECT id, first_name, last_name, email, status, password, date_created, date_updated FROM users WHERE id=?;"
+	queryUpdateUser = "Update users SET first_name=?, last_name=?, email=?, status=?, password=? WHERE id=?;"
 )
 
 func (u *User) Get() *errors.RestErr {
@@ -20,8 +21,8 @@ func (u *User) Get() *errors.RestErr {
 	defer stmt.Close()
 
 	result := stmt.QueryRow(u.Id)
-	if err = result.Scan(&u.Id, &u.FirstName, &u.LastName, &u.Email, &u.DateCreated, &u.DateUpdated); err != nil {
-		return mysql_utils.ParseError(err)
+	if err = result.Scan(&u.Id, &u.FirstName, &u.LastName, &u.Email, &u.Status, &u.Password, &u.DateCreated, &u.DateUpdated); err != nil {
+		return mysql_utils.ParseErr(err)
 	}
 
 	return nil
@@ -34,15 +35,30 @@ func (u *User) Save() *errors.RestErr {
 	}
 	defer stmt.Close()
 
-	insertResult, err := stmt.Exec(u.FirstName, u.LastName, u.Email, "", "")
+	insertResult, err := stmt.Exec(u.FirstName, u.LastName, u.Email, u.Status, u.Password)
 	if err != nil {
-		return mysql_utils.ParseError(err)
+		return mysql_utils.ParseErr(err)
 	}
 	userId, err := insertResult.LastInsertId()
 	if err != nil {
 		return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
 	}
 	u.Id = userId
+
+	return nil
+}
+
+func (u *User) Update() *errors.RestErr {
+	stmt, err := user_db.Client.Prepare(queryUpdateUser)
+	if err != nil {
+		errors.NewInternalServerError(err.Error())
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(u.FirstName, u.LastName, u.Email, u.Status, u.Password, u.Id)
+	if err != nil {
+		mysql_utils.ParseErr(err)
+	}
 
 	return nil
 }
