@@ -3,6 +3,7 @@ package users
 import (
 	"fmt"
 	"github.com/sum-project/bookstore/cmd/users-api/app/datasources/mysql/user_db"
+	"github.com/sum-project/bookstore/internal/mysql_utils"
 	"github.com/sum-project/bookstore/pkg/errors"
 )
 
@@ -20,7 +21,7 @@ func (u *User) Get() *errors.RestErr {
 
 	result := stmt.QueryRow(u.Id)
 	if err = result.Scan(&u.Id, &u.FirstName, &u.LastName, &u.Email, &u.DateCreated, &u.DateUpdated); err != nil {
-		return errors.NewInternalServerError(fmt.Sprintf("error when thrying to get user %d: %s", u.Id, err.Error()))
+		return mysql_utils.ParseError(err)
 	}
 
 	return nil
@@ -35,7 +36,7 @@ func (u *User) Save() *errors.RestErr {
 
 	insertResult, err := stmt.Exec(u.FirstName, u.LastName, u.Email, "", "")
 	if err != nil {
-		return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
+		return mysql_utils.ParseError(err)
 	}
 	userId, err := insertResult.LastInsertId()
 	if err != nil {
