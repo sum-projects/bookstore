@@ -2,7 +2,12 @@ package users
 
 import (
 	"fmt"
+	"github.com/sum-project/bookstore/cmd/users-api/app/datasources/mysql/user_db"
 	"github.com/sum-project/bookstore/pkg/errors"
+)
+
+const (
+	queryInsertUser = "INSERT INTO users(first_name, last_name, email, status, password) VALUES (?, ?, ?, ?, ?);"
 )
 
 var (
@@ -26,14 +31,21 @@ func (u *User) Get() *errors.RestErr {
 }
 
 func (u *User) Save() *errors.RestErr {
-	current := userDB[u.Id]
-	if current != nil {
-		if current.Email == u.Email {
-			return errors.NewBadRequestErr(fmt.Sprintf("email %s already registered", u.Email))
-		}
-		return errors.NewBadRequestErr(fmt.Sprintf("user %d alreadt exists", u.Id))
+	stmt, err := user_db.Client.Prepare(queryInsertUser)
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
 	}
-	userDB[u.Id] = u
+	defer stmt.Close()
+
+	insertResult, err := stmt.Exec(u.FirstName, u.LastName, u.Email, "", "")
+	if err != nil {
+		return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
+	}
+	userId, err := insertResult.LastInsertId()
+	if err != nil {
+		return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
+	}
+	u.Id = userId
 
 	return nil
 }
