@@ -9,22 +9,30 @@ import (
 	"strconv"
 )
 
-func GetUser(c *gin.Context) {
-	userId, err := strconv.ParseInt(c.Param("user_id"), 10, 64)
+func getUserId(userIdParam string) (int64, *errors.RestErr) {
+	userId, err := strconv.ParseInt(userIdParam, 10, 64)
 	if err != nil {
-		restErr := errors.NewBadRequestErr("user id should be a number")
-		c.JSON(restErr.Status, restErr)
+		return 0, errors.NewBadRequestErr("user id should be a number")
+	}
+
+	return userId, nil
+}
+
+func Get(c *gin.Context) {
+	userId, err := getUserId(c.Param("user_id"))
+	if err != nil {
+		c.JSON(err.Status, err)
 		return
 	}
-	user, getErr := services.GetUser(userId)
+	user, err := services.GetUser(userId)
 	if err != nil {
-		c.JSON(getErr.Status, getErr)
+		c.JSON(err.Status, err)
 		return
 	}
 	c.JSON(http.StatusOK, user)
 }
 
-func CreateUser(c *gin.Context) {
+func Create(c *gin.Context) {
 	var user users.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		restErr := errors.NewBadRequestErr("invalid json body")
@@ -41,16 +49,15 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, result)
 }
 
-func UpdateUser(c *gin.Context) {
-	userId, err := strconv.ParseInt(c.Param("user_id"), 10, 64)
-	if err != nil {
-		restErr := errors.NewBadRequestErr("user id should be a number")
-		c.JSON(restErr.Status, restErr)
+func Update(c *gin.Context) {
+	userId, getErr := getUserId(c.Param("user_id"))
+	if getErr != nil {
+		c.JSON(getErr.Status, getErr)
 		return
 	}
 
 	var user users.User
-	if err = c.ShouldBindJSON(&user); err != nil {
+	if err := c.ShouldBindJSON(&user); err != nil {
 		restErr := errors.NewBadRequestErr("invalid json body")
 		c.JSON(restErr.Status, restErr)
 		return
@@ -66,4 +73,18 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+func Delete(c *gin.Context) {
+	userId, err := getUserId(c.Param("user_id"))
+	if err != nil {
+		c.JSON(err.Status, err)
+		return
+	}
+	if err = services.DeleteUser(userId); err != nil {
+		c.JSON(err.Status, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]string{"status": "deleted"})
 }
