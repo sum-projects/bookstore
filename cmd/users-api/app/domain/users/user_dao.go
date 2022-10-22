@@ -8,24 +8,20 @@ import (
 
 const (
 	queryInsertUser = "INSERT INTO users(first_name, last_name, email, status, password) VALUES (?, ?, ?, ?, ?);"
-)
-
-var (
-	userDB = make(map[int64]*User)
+	queryGetUser    = "SELECT id, first_name, last_name, email, date_created, date_updated FROM users WHERE id=?;"
 )
 
 func (u *User) Get() *errors.RestErr {
-	result := userDB[u.Id]
-	if result == nil {
-		return errors.NewNotFoundErr(fmt.Sprintf("user %d not found", u.Id))
+	stmt, err := user_db.Client.Prepare(queryGetUser)
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
 	}
+	defer stmt.Close()
 
-	u.Id = result.Id
-	u.FirstName = result.FirstName
-	u.LastName = result.LastName
-	u.Email = result.Email
-	u.DateCreated = result.DateCreated
-	u.DateUpdated = result.DateUpdated
+	result := stmt.QueryRow(u.Id)
+	if err = result.Scan(&u.Id, &u.FirstName, &u.LastName, &u.Email, &u.DateCreated, &u.DateUpdated); err != nil {
+		return errors.NewInternalServerError(fmt.Sprintf("error when thrying to get user %d: %s", u.Id, err.Error()))
+	}
 
 	return nil
 }
