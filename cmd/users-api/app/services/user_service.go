@@ -2,6 +2,7 @@ package services
 
 import (
 	"github.com/sum-project/bookstore/cmd/users-api/app/domain/users"
+	"github.com/sum-project/bookstore/internal/crypto_utils"
 	"github.com/sum-project/bookstore/pkg/errors"
 )
 
@@ -17,6 +18,9 @@ func CreateUser(user users.User) (*users.User, *errors.RestErr) {
 	if err := user.Validate(); err != nil {
 		return nil, err
 	}
+
+	user.Status = users.StatusActive
+	user.Password = crypto_utils.GetMd5(user.Password)
 
 	if err := user.Save(); err != nil {
 		return nil, err
@@ -63,7 +67,7 @@ func DeleteUser(userId int64) *errors.RestErr {
 	return user.Delete()
 }
 
-func Search(status string) ([]users.User, *errors.RestErr) {
+func Search(status string) (users.Users, *errors.RestErr) {
 	dao := &users.User{}
 	return dao.FindByStatus(status)
 }
